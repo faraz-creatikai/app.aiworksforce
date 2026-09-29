@@ -1,11 +1,11 @@
-export interface roleAllDataInterface {
+export interface roleEmpAllDataInterface {
     Department: string;
     Designation: string;
     Name: string;
     Status: string;
 }
 
-export interface roleGetDataInterface {
+export interface roleEmpGetDataInterface {
     _id: string;
     Department: {
         _id: string,
@@ -19,12 +19,12 @@ export interface roleGetDataInterface {
     Status: string;
 }
 
-export interface roleDialogDataInterface {
+export interface roleEmpDialogDataInterface {
     id: string;
     Name: string;
     Status: string;
 }
 
-export interface roleDeleteAllPayloadInterface {
-    roleIds: string[];
+export interface roleEmpDeleteAllPayloadInterface {
+    roleEmpIds: string[];
 }
