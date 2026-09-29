@@ -1,0 +1,497 @@
+"use client";
+
+import * as React from "react";
+import {
+  Home,
+  User,
+  ShoppingCart,
+  Info,
+  Pointer,
+  IndianRupee,
+  Diamond,
+  MessageSquare,
+  PlusSquare,
+  PenSquareIcon,
+  User2,
+  LineChart,
+  LucideCoins,
+  ShieldUser,
+  Settings,
+  UsersIcon,
+  ExternalLink,
+  Clock,
+  Users,
+  HelpingHand,
+} from "lucide-react";
+
+import { NavMain } from "../components/nav-main";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { title } from "process";
+import { useAuth } from "@/context/AuthContext";
+import { FaRobot } from "react-icons/fa";
+import { TbSocial } from "react-icons/tb";
+import { RiFilePaper2Fill } from "react-icons/ri";
+import { GrConfigure } from "react-icons/gr";
+import { sidebarLogoPath } from "@/app/data/PlatformData";
+import BrandLogo from "@/app/component/labels/BrandLogo";
+import { useCustomerFieldLabel } from "@/context/customer/CustomerFieldLabelContext";
+
+// This is sample data.
+const data = {
+  navMain: [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: "customers",
+      url: "/customer",
+      icon: User,
+    },
+    {
+      title: "customer Follow Up",
+      url: "/followups/customer",
+      icon: PlusSquare,
+    },
+    {
+      title: "customer Support",
+      url: "/customer/support",
+      icon: HelpingHand,
+    },
+    {
+      title: "Employee Manage",
+      url: "/employee-manage",
+      icon: Users,
+    },
+    {
+      title: "Employee Attendance",
+      url: "/attendance",
+      icon: Clock,
+    },
+
+    /* {
+      title: "Employee Enquiry",
+      url: "/customer/enquiry",
+      icon: Info,
+    }, */
+        {
+      title: "Task",
+      url: "/task",
+      icon: Pointer,
+    },
+    {
+      title: "Schedules",
+      url: "/schedules",
+      icon: PenSquareIcon,
+    },
+    {
+      title: "Ai Agents",
+      url: "/aiagents",
+      icon: FaRobot,
+    },
+    {
+      title: "Sales Script",
+      url: "/salesscript",
+      icon: RiFilePaper2Fill
+    },
+
+    {
+      title: "Social Media Manager",
+      url: "/socialmedia-manager",
+      icon: TbSocial
+    },
+    {
+      title: "Contact",
+      url: "/contact",
+      icon: User,
+    },
+    {
+      title: "Contact Follow Up",
+      url: "/followups/contact",
+      icon: PlusSquare,
+    },
+    {
+      title: "Masters",
+      url: "#",
+      icon: Diamond,
+      items: [
+        {
+          title: "customer Fields",
+          url: "/masters/customerfields",
+        },
+        {
+          title: "Campaign",
+          url: "/masters/campaign",
+        },
+        {
+          title: "customer Types",
+          url: "/masters/customer-types",
+        },
+        {
+          title: "customer Subtype",
+          url: "/masters/customer-subtype",
+        },
+        {
+          title: "Lead Type",
+          url: "/masters/leadtype",
+        },
+        {
+          title: "City",
+          url: "/masters/city",
+        },
+        {
+          title: "Locations",
+          url: "/masters/locations",
+        },
+        {
+          title: "Sub Locations",
+          url: "/masters/sublocation",
+        },
+         {
+          title: "Employee Department",
+          url: "/masters/department",
+        },
+        {
+          title: "Employee Designation",
+          url: "/masters/designation",
+        },
+        {
+          title: "Employee Roles",
+          url: "/masters/roleemp",
+        },
+        {
+          title: "Facilities",
+          url: "/masters/facilities",
+        },
+        {
+          title: "Amenities",
+          url: "/masters/amenities",
+        },
+        {
+          title: "Builder Sliders",
+          url: "/masters/builder-sliders",
+        },
+        {
+          title: "Fuctional Areas",
+          url: "/masters/functional-areas",
+        },
+        {
+          title: "Industries",
+          url: "/masters/industries",
+        },
+        {
+          title: "Contact Campaign",
+          url: "/masters/contact-campaign",
+        },
+        {
+          title: "Contact Type",
+          url: "/masters/contact-type",
+        },
+        {
+          title: "References",
+          url: "/masters/references",
+        },
+        {
+          title: "Price",
+          url: "/masters/price",
+        },
+        {
+          title: "Expenses",
+          url: "/masters/expenses",
+        },
+        {
+          title: "Incomes",
+          url: "/masters/incomes",
+        },
+        {
+          title: "Status Type",
+          url: "/masters/status-type",
+        },
+        {
+          title: "Contact Status Type",
+          url: "/masters/contact-statustype",
+        },
+        {
+          title: "Payment Methods",
+          url: "/masters/payment-methods",
+        },
+        {
+          title: "Mail Templates",
+          url: "/masters/mail-templates",
+        },
+        {
+          title: "Whatsapp Templates",
+          url: "/masters/whatsapp-templates",
+        },
+        {
+          title: "New User Requests",
+          url: "/masters/newuser-requests",
+        },
+      ],
+    },
+    {
+      title: "Financial",
+      url: "#",
+      icon: IndianRupee,
+      items: [
+        {
+          title: "Income Marketings",
+          url: "/financial/income_marketings",
+        },
+        {
+          title: "Expense Marketings",
+          url: "/financial/expense_marketings",
+        },
+      ],
+    },
+    {
+      title: " Reports",
+      url: "#",
+      icon: LineChart,
+      items: [
+        {
+          title: "Calling Report",
+          url: "/reports/call-report",
+        },
+        {
+          title: "User Activity",
+          url: "/reports/activity",
+        }
+      ]
+    },
+    {
+      title: "Requirements",
+      url: "/requirements",
+      icon: Home,
+    },
+    {
+      title: "Favourites",
+      url: "/favourites",
+      icon: Home,
+    },
+    /*   {
+        title: "E-commerce",
+        url: "#",
+        icon: ShoppingCart,
+        items: [
+          {
+            title: "Dashboard",
+            url: "/dashboard",
+          },
+          {
+            title: "Category",
+            url: "/category",
+          },
+          {
+            title: "Sub Category",
+            url: "/sub-category",
+          },
+          {
+            title: "Products",
+            url: "/product",
+          },
+          {
+            title: "Orders",
+            url: "/orders",
+          },
+        ],
+      }, */
+    {
+      title: "External Leads",
+      url: "/minedlead",
+      icon: ExternalLink,
+    },
+    {
+      title: "Clients",
+      url: "/clients",
+      icon: UsersIcon,
+    },
+    {
+      title: "Company Project",
+      url: "/company_project",
+      icon: User,
+    },
+    {
+      title: "Company Project Enquiry",
+      url: "/company_project/enquiry",
+      icon: Info,
+    },
+
+    {
+      title: "Settings",
+      url: "#",
+      icon: Settings,
+      items: [
+        {
+          title: "Customer Fields",
+          url: "/settings/customer/customer-fields",
+        },
+        {
+          title: "CRM Branding",
+          url: "/settings/brand",
+        },
+      ]
+    },
+    {
+      title: "Configuration",
+      url: "#",
+      icon: GrConfigure,
+      items: [
+        {
+          title: "AI",
+          url: "/configuration/ai"
+        },
+        {
+          title: "Tabbly",
+          url: "/configuration/tabbly",
+        },
+        {
+          title: "whatsapp",
+          url: "/configuration/whatsapp"
+        },
+        {
+          title: "system",
+          url: "/configuration/system"
+        }
+
+      ]
+    },
+    {
+      title: "Users",
+      url: "/users",
+      icon: User2,
+    },
+
+    {
+      title: "customer Import",
+      url: "/imports/customer",
+      icon: MessageSquare,
+    },
+    {
+      title: "Contact Import",
+      url: "/imports/contact",
+      icon: MessageSquare,
+    },
+
+    /* 
+    {
+      title: "Contact Report",
+      url: "/reports/contact",
+      icon: LineChart,
+    }, */
+    {
+      title: "Database Manager",
+      url: "/database_manager",
+      icon: LucideCoins,
+    },
+  ],
+};
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { state } = useSidebar();
+  const { admin, isLoading } = useAuth();
+  const { getLabel, labels } = useCustomerFieldLabel();
+  const navMainWithLabels = data.navMain.map((item) => {
+    if (item.title !== "Masters") return item;
+
+    return {
+      ...item,
+      items: item.items?.map((subItem) => {
+        if (subItem.url === "/masters/campaign") {
+          return {
+            ...subItem,
+            title: getLabel("Campaign", "Campaign"),
+          };
+        }
+
+        if (subItem.url === "/masters/customer-types") {
+          return {
+            ...subItem,
+            title: getLabel("CustomerType", "Type"),
+          };
+        }
+
+        if (subItem.url === "/masters/customer-subtype") {
+          return {
+            ...subItem,
+            title: getLabel("CustomerSubType", "Subtype"),
+          };
+        }
+
+        return subItem;
+      }),
+    };
+  });
+  if (isLoading) return null;
+
+  const filteredNavItems = navMainWithLabels.filter((item) => {
+    // Hide "Masters" if not admin
+    if (item.title === "Masters" && admin?.role !== "administrator") {
+      return false;
+    }
+    if (item.title === "Clients" && admin?.role !== "administrator") {
+      return false;
+    }
+    if (item.title === "Ai Agents" && admin?.role !== "administrator") {
+      return false;
+    }
+    if (item.title === "Configuration" && admin?.role !== "administrator") {
+      return false
+    }
+    return true;
+  }).map((item) => {
+    // Handle Settings submenu permissions
+    if (item.title === "Settings") {
+      return {
+        ...item,
+        items: item.items?.filter((subItem) => {
+          // Hide "Customer Fields" if not admin
+          if (
+            subItem.title === "Customer Fields" &&
+            admin?.role !== "administrator"
+          ) {
+            return false;
+          }
+          return true;
+        }),
+      };
+    }
+
+    return item;
+  });
+  return (
+    <Sidebar collapsible="icon" className="" {...props}>
+      <SidebarHeader
+        className={`flex items-center py-1 justify-center ${state === "collapsed"
+          ? "bg-white dark:bg-[var(--color-secondary-darker)] py-4"
+          : "bg-gray-100"
+          }`}
+      >
+        {state === "collapsed" ? (
+          <BrandLogo
+            variant="icon"
+            className="h-8 w-8 object-contain"
+          />
+        ) : (
+          <BrandLogo
+            variant="text"
+            className="h-12 w-40 object-contain"
+          />
+        )}
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={filteredNavItems} />
+      </SidebarContent>
+
+      <SidebarRail />
+    </Sidebar>
+  );
+}
