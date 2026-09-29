@@ -1,4 +1,4 @@
-export const BASE_URL = "http://localhost:5000/api";
+export const BASE_URL = "https://appapi.aiworksforce.com/api";
 //https://live-project-backend-1.onrender.com
 //https://propertyapi.aileadgenie.cloud/api
 //https://apidomain.ibigdata.in
@@ -644,4 +644,4 @@ export const API_ROUTES = {
   }
 };
 
-export const API_URL = "http://localhost:5000";
+export const API_URL = "https://appapi.aiworksforce.com";
