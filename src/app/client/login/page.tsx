@@ -174,8 +174,8 @@ export default function ClientLogin() {
                   aria-checked={keepSignedIn}
                   onClick={() => setKeepSignedIn((v) => !v)}
                   className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${keepSignedIn
-                      ? "bg-[var(--color-primary)] border-[var(--color-primary)]"
-                      : "border-[var(--color-muted)] bg-white"
+                    ? "bg-[var(--color-primary)] border-[var(--color-primary)]"
+                    : "border-[var(--color-muted)] bg-white"
                     }`}
                 >
                   {keepSignedIn && <Check size={13} className="text-white" strokeWidth={3} />}

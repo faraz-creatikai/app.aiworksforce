@@ -245,6 +245,14 @@ export const API_ROUTES = {
     UPDATEAGENT: `${BASE_URL}/tabbly/update-agent`,
   },
 
+  SARVAM: {
+    TRIGGER_CALL: `${BASE_URL}/sarvam/triggerCall`,
+    SYNC_CALL_LOGS: `${BASE_URL}/sarvam/sync-call-logs`,
+    AUDIO: `${BASE_URL}/sarvam/audio`,
+    // If you plan to add endpoints to get call logs later, you can add them here:
+    // GET_CALL_LOGS: `${BASE_URL}/sarvam/logs`,
+  },
+
   SALESSCRIPT: {
     GET_ALL: `${BASE_URL}/salesscript`,
     GET_BY_ID: (id: string) => `${BASE_URL}/salesscript/${id}`,
@@ -645,3 +653,6 @@ export const API_ROUTES = {
 };
 
 export const API_URL = "https://appapi.aiworksforce.com";
+
+
+

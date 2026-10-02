@@ -258,7 +258,7 @@ export default function CustomerFollowups() {
             setFollowupDialogData(data.map((item: any) => ({
                 _id: item._id,
                 customer: item.customer._id,
-                 Name: Name,
+                Name: Name,
                 StartDate: item.StartDate,
                 StatusType: item.StatusType,
                 FollowupNextDate: item.FollowupNextDate,
@@ -704,7 +704,7 @@ export default function CustomerFollowups() {
                         labelLeads={phonetableheader}
                         onFollowup={(lead) => {
                             setIsFollowupDialogOpen(true);
-                            handleFollowups(lead.customerid,lead.Name);
+                            handleFollowups(lead.customerid, lead.Name);
                         }}
                         onAdd={(id) => addFollowup(id)}
                         onView={(id) => handleViewClick(id)}
@@ -940,7 +940,7 @@ export default function CustomerFollowups() {
                                                     className="px-4 py-3  border border-gray-200 text-[var(--color-primary)] cursor-pointer hover:underline"
                                                     onClick={() => {
                                                         setIsFollowupDialogOpen(true);
-                                                        handleFollowups(item.customerid,item.Name);
+                                                        handleFollowups(item.customerid, item.Name);
                                                     }}
                                                 >
                                                     Follow UP

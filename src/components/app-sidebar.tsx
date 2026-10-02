@@ -22,6 +22,7 @@ import {
   Clock,
   Users,
   HelpingHand,
+  PhoneCall,
 } from "lucide-react";
 
 import { NavMain } from "../components/nav-main";
@@ -60,6 +61,11 @@ const data = {
       title: "customer Follow Up",
       url: "/followups/customer",
       icon: PlusSquare,
+    },
+      {
+      title: "customer calling",
+      url: "/customer/calling",
+      icon: PhoneCall,
     },
     {
       title: "customer Support",
