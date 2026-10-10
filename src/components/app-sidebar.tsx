@@ -270,7 +270,7 @@ const data = {
         {
           title: "Calling Report",
           url: "/reports/call-report",
-        },    
+        },
         {
           title: "User Activity",
           url: "/reports/activity",
@@ -459,6 +459,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
     if (item.title === "Configuration" && admin?.role !== "administrator") {
       return false
+    }
+    if (item.title === "customer calling" && (admin?.role !== "administrator" && admin?.role !== "city_admin")) {
+      return false;
     }
     return true;
   }).map((item) => {
