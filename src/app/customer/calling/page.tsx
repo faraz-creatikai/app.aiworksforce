@@ -6,7 +6,6 @@ import {
   Search,
   Phone,
   PhoneCall,
-  Sparkles,
   User,
   Mail,
   CheckCircle2,
@@ -41,12 +40,27 @@ import { toast } from "react-toastify";
 import { getCustomer } from "@/store/customer";
 import { triggerSarvamCall, syncSarvamCallLogs, fetchSarvamAudio } from "@/store/sarvam/sarvam";
 import { getSalesScript } from "@/store/salescript/salesscript";
+import VoicePicker from "@/app/component/datafields/VoicePicker";
+import CallingAgentPicker from "@/app/component/datafields/CallingAgentPicker";
+import Link from "next/link";
 
 
 // --- CONFIG ---
 // Where the "Manual Call" button sends the user. Change this to your real dialer route.
 // The customer's number / id / name are passed as query params: ?number=...&customerId=...&name=...
 const DIALER_ROUTE = "/dialer";
+
+// How many customers are rendered in the left list at a time ("Load more" adds this many)
+const PAGE_SIZE = 20;
+
+// After an AI call starts, the selected customer's log is re-fetched silently at these
+// delays (ms). Sarvam only publishes a call to the log after it ends and is processed.
+const LOG_POLL_DELAYS = [30000, 90000, 180000];
+
+// Extra space (px) to leave under the page, on top of the padding the parent layouts
+// already add (that padding is measured automatically). Raise this if you have something
+// fixed to the bottom of the screen, such as a mobile bottom navigation bar.
+const BOTTOM_GAP = 0;
 
 // --- TYPES ---
 interface SalesScript {
@@ -55,7 +69,7 @@ interface SalesScript {
   Content: string;
   mode?: string;
   // metadata can be {} (manual scripts) or { tone, tips } (AI generated scripts)
-  metadata?: { tone?: string; tips?: string[]; [key: string]: any } | null;
+  metadata?: { tone?: string; tips?: string[];[key: string]: any } | null;
   Status?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -90,10 +104,21 @@ const formatTalkTime = (seconds: number) => {
   return `${s}s`;
 };
 
+/**
+ * Sarvam timestamps look like "2026-10-05T09:11:26" with NO timezone, but they are UTC.
+ * new Date() would read that as local time and show every call 5h30m early in India,
+ * so we append "Z" when no timezone is present.
+ */
+const parseUtc = (iso?: string): Date | null => {
+  if (!iso) return null;
+  const hasZone = /[zZ]$|[+-]\d\d:?\d\d$/.test(iso);
+  const d = new Date(hasZone ? iso : `${iso}Z`);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 const dayLabel = (iso?: string) => {
-  if (!iso) return "Unknown date";
-  const date = new Date(iso);
-  if (isNaN(date.getTime())) return "Unknown date";
+  const date = parseUtc(iso);
+  if (!date) return "Unknown date";
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
@@ -279,7 +304,6 @@ const LogDetailsCard = ({ log }: { log: any }) => {
   const userPrompt = log.agent_variables?.user_prompt || "";
   const durationSecs = log.duration_in_seconds || 0;
   const durationStr = formatDurationSeconds(durationSecs);
-  const dateStr = log.start_datetime;
 
   // Raw Sarvam media URL (the backend sync controller returns it as recording_url).
   // It is passed to fetchSarvamAudio(), which downloads it through our server.
@@ -296,7 +320,12 @@ const LogDetailsCard = ({ log }: { log: any }) => {
   const isCompleted = durationSecs > 0;
   const endedByLabel = endedBy.replace(/_/g, " ").toLowerCase();
   const displayStatus = isCompleted ? `Completed (${endedByLabel})` : "Failed / not answered";
-  const timeStr = dateStr ? new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "N/A";
+
+  // start_datetime is UTC without a timezone marker, so parse it as UTC
+  const parsedStart = parseUtc(log.start_datetime);
+  const timeStr = parsedStart
+    ? parsedStart.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "N/A";
 
   const copyRaw = () => {
     navigator.clipboard
@@ -317,7 +346,7 @@ const LogDetailsCard = ({ log }: { log: any }) => {
         type="button"
         onClick={() => setIsExpanded((v) => !v)}
         aria-expanded={isExpanded}
-        className="w-full text-left p-4 sm:p-5 flex items-start gap-4 cursor-pointer hover:bg-gray-50/60 transition-colors"
+        className="w-full text-left p-3 sm:p-5 flex items-start gap-3 sm:gap-4 cursor-pointer hover:bg-gray-50/60 transition-colors"
       >
         <span
           className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isCompleted ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600"
@@ -358,7 +387,7 @@ const LogDetailsCard = ({ log }: { log: any }) => {
       {isExpanded && (
         <div className="border-t border-gray-100 bg-gray-50/50">
           {/* Tabs */}
-          <div className="px-4 sm:px-5 pt-3 flex items-center gap-1 overflow-x-auto" role="tablist">
+          <div className="px-3 sm:px-5 pt-3 flex items-center gap-1 overflow-x-auto" role="tablist">
             {LOG_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -384,7 +413,7 @@ const LogDetailsCard = ({ log }: { log: any }) => {
             })}
           </div>
 
-          <div className="p-4 sm:p-5">
+          <div className="p-3 sm:p-5">
             {/* OVERVIEW */}
             {activeTab === "overview" && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -452,7 +481,7 @@ const LogDetailsCard = ({ log }: { log: any }) => {
                             <span className={`text-[10px] font-bold block mb-1 ${isUser ? "text-blue-400 text-right" : "text-purple-400"}`}>
                               {isUser ? "Customer" : "AI agent"}
                             </span>
-                            <span className="whitespace-pre-wrap">{msg.content}</span>
+                            <span className="whitespace-pre-wrap">{msg.content ?? msg.en_text ?? ""}</span>
                           </div>
                         </div>
                       );
@@ -626,16 +655,33 @@ export default function CustomerCallingPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [isCustomersLoading, setIsCustomersLoading] = useState(true);
 
-  // Call logs
-  const [allCallLogs, setAllCallLogs] = useState<any[]>([]);
-  const [isLogsLoading, setIsLogsLoading] = useState(true);
+  // Call logs of the CURRENTLY SELECTED customer only
+  const [customerCallLogs, setCustomerCallLogs] = useState<any[]>([]);
+  const [isLogsLoading, setIsLogsLoading] = useState(false);
+  // Which customer the logs above belong to (stops a stale list from flashing on switch)
+  const [logsLoadedFor, setLogsLoadedFor] = useState<string | null>(null);
   const [logFilter, setLogFilter] = useState<"all" | "answered" | "missed">("all");
+  // Always holds the latest selected customer id, so a slow response for a previously
+  // selected customer can be ignored instead of overwriting the current one.
+  const selectedIdRef = useRef<string | null>(null);
 
   // Selection & search
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchField, setSearchField] = useState<"All" | "Name" | "Campaign" | "Phone">("All");
   const [isListCollapsed, setIsListCollapsed] = useState(false);
+  // How many customers are currently rendered in the list
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // --- LAYOUT ---
+  // The page is a fixed-height "app shell": header on top, two panes below, and each pane
+  // scrolls on its own. rootHeight = viewport height minus whatever the app layout puts
+  // above/below this page (measured, so there is no magic number to maintain).
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [rootHeight, setRootHeight] = useState<number | null>(null);
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const listScrollTopRef = useRef(0); // remembers the list position while it is hidden on mobile
+  const historyScrollRef = useRef<HTMLDivElement>(null);
 
   // AI call panel
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -650,11 +696,56 @@ export default function CustomerCallingPage() {
   const [scriptsError, setScriptsError] = useState(false);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null);
+  const [voice, setVoice] = useState<string | null>(null);
 
-  // --- INITIAL DATA FETCH ---
+  // Pending silent log re-fetches scheduled after an AI call starts
+  const pollTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearPollTimers = () => {
+    pollTimersRef.current.forEach(clearTimeout);
+    pollTimersRef.current = [];
+  };
+
+  // --- FIT THE PAGE TO THE SCREEN ---
+  useEffect(() => {
+    const fit = () => {
+      const el = rootRef.current;
+      if (!el) return;
+
+      // Space the app layout uses above this page (its header, top padding, etc.)
+      const top = el.getBoundingClientRect().top + window.scrollY;
+
+      // Padding the parent layouts add below this page
+      let below = BOTTOM_GAP;
+      let node: HTMLElement | null = el.parentElement;
+      while (node && node !== document.body) {
+        below += parseFloat(getComputedStyle(node).paddingBottom) || 0;
+        node = node.parentElement;
+      }
+
+      setRootHeight(Math.max(420, Math.floor(window.innerHeight - top - below)));
+    };
+
+    fit();
+    window.addEventListener("resize", fit);
+    window.addEventListener("orientationchange", fit);
+    return () => {
+      window.removeEventListener("resize", fit);
+      window.removeEventListener("orientationchange", fit);
+    };
+  }, []);
+
+  // --- INITIAL DATA FETCH (customers only; logs load when a customer is selected) ---
   useEffect(() => {
     fetchData();
+    return clearPollTimers; // stop pending re-fetches when leaving the page
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Back to the first page whenever the search changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, searchField]);
 
   const getTelHref = (num?: string) => {
     const cleaned = (num || "").replace(/[^\d+]/g, "");
@@ -663,39 +754,75 @@ export default function CustomerCallingPage() {
 
   const fetchData = async () => {
     setIsCustomersLoading(true);
-    setIsLogsLoading(true);
-
     try {
-      const [customersRes, logsRes] = await Promise.all([getCustomer(), syncSarvamCallLogs()]);
-
+      const customersRes = await getCustomer();
       if (customersRes) setCustomers(customersRes);
-
-      if (logsRes?.success && logsRes?.logs) {
-        setAllCallLogs(logsRes.logs);
-      }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load initial data.");
+      toast.error("Failed to load customers.");
     } finally {
       setIsCustomersLoading(false);
-      setIsLogsLoading(false);
     }
   };
 
-  const refreshLogs = async () => {
-    setIsLogsLoading(true);
+  // --- CALL LOGS (one customer at a time) ---
+  // silent = true: no skeleton flash and no toasts (used for the automatic re-fetches)
+  const loadLogs = async (customerId: string, phone?: string, silent = false) => {
+    if (!silent) setIsLogsLoading(true);
     try {
-      const logsRes = await syncSarvamCallLogs();
-      if (logsRes?.success && logsRes?.logs) {
-        setAllCallLogs(logsRes.logs);
-        toast.success("Call logs synced!");
+      const res = await syncSarvamCallLogs({ customerId, phone });
+
+      // The user switched to another customer while this was loading: drop the result
+      if (selectedIdRef.current !== customerId) return;
+
+      if (res?.success && Array.isArray(res.logs)) {
+        const sorted = [...res.logs].sort(
+          (a, b) =>
+            (parseUtc(b.start_datetime)?.getTime() ?? 0) - (parseUtc(a.start_datetime)?.getTime() ?? 0)
+        );
+        setCustomerCallLogs(sorted);
+        if (!silent) toast.success("Call logs synced!");
+      } else if (!silent) {
+        toast.error("Failed to sync call logs.");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to sync call logs.");
+      if (!silent) toast.error("Failed to sync call logs.");
     } finally {
-      setIsLogsLoading(false);
+      if (selectedIdRef.current === customerId) {
+        setLogsLoadedFor(customerId);
+        if (!silent) setIsLogsLoading(false);
+      }
     }
+  };
+
+  // Load the logs whenever a different customer is selected
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+    setCustomerCallLogs([]);
+    setLogsLoadedFor(null);
+    clearPollTimers(); // a pending poll belongs to the previous customer
+    historyScrollRef.current?.scrollTo({ top: 0 }); // new customer -> start at the top
+    if (!selectedId) {
+      setIsLogsLoading(false);
+      return;
+    }
+    const c = customers.find((x: any) => (x._id || x.id) === selectedId);
+    loadLogs(String(selectedId), c?.ContactNumber);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
+  // On mobile the list is hidden while a customer is open. Hiding an element resets its
+  // scroll position, so put the user back where they were when they come back.
+  useEffect(() => {
+    if (selectedId === null && listScrollRef.current) {
+      listScrollRef.current.scrollTop = listScrollTopRef.current;
+    }
+  }, [selectedId]);
+
+  const handleSelectCustomer = (id: string) => {
+    listScrollTopRef.current = listScrollRef.current?.scrollTop ?? 0;
+    setSelectedId(id);
   };
 
   // --- SALES SCRIPTS ---
@@ -771,28 +898,19 @@ export default function CustomerCallingPage() {
     });
   }, [customers, searchQuery, searchField]);
 
+  // Only this slice is rendered in the DOM
+  const visibleCustomers = useMemo(
+    () => filteredCustomers.slice(0, visibleCount),
+    [filteredCustomers, visibleCount]
+  );
+  const hasMore = visibleCount < filteredCustomers.length;
+  const remaining = filteredCustomers.length - visibleCount;
+
   const selectedCustomer = customers.find((c: any) => (c._id || c.id) === selectedId);
 
-  // --- MATCH CALL LOGS TO SELECTED CUSTOMER ---
-  const customerCallLogs = useMemo(() => {
-    if (!selectedCustomer || !allCallLogs.length) return [];
-
-    const targetId = String(selectedCustomer._id || selectedCustomer.id);
-
-    const matched = allCallLogs.filter((log: any) => {
-      // Exact customer_id inside agent_variables
-      const logCustId = String(log.agent_variables?.customer_id);
-      if (logCustId === targetId) return true;
-
-      // Fallback brute string match just in case
-      return JSON.stringify(log).includes(targetId);
-    });
-
-    // Newest first
-    return [...matched].sort(
-      (a, b) => new Date(b.start_datetime || 0).getTime() - new Date(a.start_datetime || 0).getTime()
-    );
-  }, [allCallLogs, selectedCustomer]);
+  // Show the skeleton while loading, and also in the brief moment right after selecting
+  // a customer before their logs have been requested.
+  const showLogsLoading = isLogsLoading || (!!selectedId && logsLoadedFor !== selectedId);
 
   const callStats = useMemo(() => {
     const answered = customerCallLogs.filter((l: any) => (l.duration_in_seconds || 0) > 0);
@@ -857,13 +975,22 @@ export default function CustomerCallingPage() {
       const res = await triggerSarvamCall({
         userPrompt: aiPrompt,
         customerId: selectedId,
-        promptMode, // "script" = used as written, "casual" = AI writes the script
+        promptMode,
       });
 
       if (res?.success) {
         setCallResult(res);
         toast.success("AI call started!");
-        setTimeout(refreshLogs, 6000);
+
+        // The call is still running, and Sarvam only lists it after it ends.
+        // Re-fetch this customer's logs quietly a few times so the call appears
+        // without a manual refresh.
+        const cid = String(selectedId);
+        const phone = selectedCustomer?.ContactNumber;
+        clearPollTimers();
+        pollTimersRef.current = LOG_POLL_DELAYS.map((ms) =>
+          setTimeout(() => loadLogs(cid, phone, true), ms)
+        );
       } else {
         toast.error(res?.message || "Failed to start call");
       }
@@ -883,25 +1010,50 @@ export default function CustomerCallingPage() {
     callResult?.aiInstructions?.source ?? (promptMode === "casual" ? "generated" : "script");
 
   return (
-    <div className="h-full flex flex-col overflow-hidden max-w-[90rem] mx-auto w-full sm:bg-white rounded-2xl sm:px-2">
+    // ROOT: a fixed-height shell (measured above). Nothing here scrolls except the two panes
+    // inside, so the top bar / customer header always stay visible and the page itself never
+    // needs to scroll. The class height is only a fallback for the first paint.
+    <div
+      ref={rootRef}
+      style={rootHeight ? { height: rootHeight } : undefined}
+      className="h-[calc(100dvh-7rem)] flex flex-col max-w-[90rem] mx-auto w-full sm:bg-white rounded-2xl sm:px-2 overflow-hidden"
+    >
 
-      {/* TOP BAR */}
-      <div className="shrink-0 sm:p-4">
-        <h1 className="text-2xl font-extrabold text-[var(--color-primary)] max-sm:mb-5 flex items-center gap-2">
-          <PhoneCall className="text-[var(--color-primary)]" size={26} /> Customer Calling
-        </h1>
-        <p className="text-xs text-gray-500 font-medium mt-1 hidden md:block">
-          Select a customer, then call them yourself from the dialer or let an AI agent make the call.
-        </p>
+      {/* TOP BAR. On phones it is hidden while a customer is open, to give the content the room. */}
+      <div
+        className={`${selectedCustomer ? "hidden lg:flex" : "flex"} shrink-0 flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 px-1 pb-3 sm:px-4 sm:py-3`}
+      >
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--color-primary)] flex items-center gap-2">
+            <PhoneCall className="text-[var(--color-primary)]" size={26} /> Customer Calling
+          </h1>
+          <p className="text-xs text-gray-500 font-medium mt-1 hidden md:block">
+            Select a customer, then call them yourself from the dialer or let an AI agent make the call.
+          </p>
+        </div>
+
+        <div className="shrink-0 self-start sm:self-center flex flex-wrap gap-2 items-center">
+          <CallingAgentPicker />
+          <Link href="/configuration/sarvam" className="text-sm cursor-pointer bg-[var(--color-primary)] text-white px-4 py-2 rounded-lg hover:bg-[var(--color-primary-dark)]">
+            View Config
+          </Link>
+        </div>
       </div>
 
-      {/* MAIN SPLIT WORKSPACE */}
-      <div className="flex flex-1 overflow-hidden h-[calc(100vh-180px)] min-h-[500px] border-t border-gray-100">
+      {/*
+        MAIN SPLIT WORKSPACE
+        flex-1 + min-h-0 = it takes exactly the space left under the top bar.
+        Both panes are the same height and scroll independently:
+          - left: the customer list
+          - right: the call history (its customer header stays pinned above it)
+        On phones only one pane shows at a time (list OR customer).
+      */}
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row border-t border-gray-100">
 
         {/* ================= LEFT PANEL: CUSTOMER LIST ================= */}
         <div
           className={`${selectedCustomer ? "hidden" : "flex"} ${isListCollapsed ? "lg:hidden" : "lg:flex"
-            } w-full lg:w-[290px] xl:w-[320px] shrink-0 border-r border-gray-200 bg-gray-50/30 flex-col`}
+            } flex-1 min-h-0 lg:flex-none w-full lg:w-[290px] xl:w-[320px] shrink-0 flex-col bg-gray-50/30 lg:border-r lg:border-gray-200`}
         >
           <div className="px-4 py-4 border-b border-gray-200 bg-white shrink-0">
             <div className="relative mb-3">
@@ -932,7 +1084,8 @@ export default function CustomerCallingPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
+          {/* The list's own scroll area (desktop and mobile) */}
+          <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar">
             {isCustomersLoading ? (
               <div className="flex flex-col gap-3 p-4">
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -946,19 +1099,19 @@ export default function CustomerCallingPage() {
                 ))}
               </div>
             ) : filteredCustomers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center p-6">
+              <div className="flex flex-col items-center justify-center py-10 lg:py-0 lg:h-full text-center p-6">
                 <Search size={32} className="text-gray-300 mb-3" />
                 <p className="text-sm font-bold text-gray-500">No customers found</p>
               </div>
             ) : (
               <div className="p-2 space-y-1">
-                {filteredCustomers.map((c: any) => {
+                {visibleCustomers.map((c: any) => {
                   const cId = c._id || c.id;
                   const isSelected = selectedId === cId;
                   return (
                     <div
                       key={cId}
-                      onClick={() => setSelectedId(cId)}
+                      onClick={() => handleSelectCustomer(cId)}
                       className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all border ${isSelected
                         ? "bg-[var(--color-primary-lighter)] border-[var(--color-primary-light)] shadow-sm"
                         : "bg-white border-transparent hover:border-gray-200"
@@ -976,15 +1129,25 @@ export default function CustomerCallingPage() {
                     </div>
                   );
                 })}
+
+                {hasMore && (
+                  <button
+                    onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                    className="w-full mt-1 py-3 text-xs font-bold text-gray-500 rounded-xl border border-dashed border-gray-200 hover:border-[var(--color-primary-light)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-lighter)] transition-colors cursor-pointer"
+                  >
+                    Load {Math.min(PAGE_SIZE, remaining)} more
+                    <span className="font-medium text-gray-400"> ({remaining} remaining)</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
 
         {/* ================= RIGHT PANEL ================= */}
-        <div className={`${selectedCustomer ? "flex" : "hidden lg:flex"} flex-1 min-w-0 flex-col bg-white overflow-hidden relative`}>
+        <div className={`${selectedCustomer ? "flex" : "hidden lg:flex"} flex-1 min-w-0 min-h-0 flex-col bg-gray-100`}>
           {!selectedCustomer ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-gray-50/50">
+            <div className="flex flex-1 flex-col items-center justify-center text-center p-8 bg-gray-50/50">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-[var(--color-primary-lighter)] text-[var(--color-primary)] mb-4 shadow-sm">
                 <Phone size={32} />
               </div>
@@ -995,9 +1158,13 @@ export default function CustomerCallingPage() {
             </div>
           ) : (
             <>
-              {/* Customer header + the two main call options */}
-              <div className="px-4 sm:px-6 pt-4 pb-5 border-b border-gray-100 shrink-0 bg-white shadow-[0_4px_20px_-15px_rgba(0,0,0,0.1)] z-10 relative">
-                <div className="flex items-center gap-3 mb-4">
+              {/*
+                CUSTOMER HEADER: always pinned (it sits outside the scrolling history).
+                Desktop: one compact row (customer on the left, call buttons on the right).
+                Phone: slim customer row with the two buttons under it.
+              */}
+              <div className="shrink-0 bg-white border-b border-gray-100 shadow-[0_4px_20px_-15px_rgba(0,0,0,0.1)] px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <button
                     onClick={() => setSelectedId(null)}
                     className="lg:hidden p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 cursor-pointer"
@@ -1014,9 +1181,9 @@ export default function CustomerCallingPage() {
                     {isListCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
                   </button>
 
-                  <Avatar name={selectedCustomer.customerName} className="w-12 h-12 text-base" />
+                  <Avatar name={selectedCustomer.customerName} className="w-10 h-10 sm:w-11 sm:h-11 text-sm sm:text-base" />
                   <div className="min-w-0">
-                    <h2 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight truncate">
+                    <h2 className="text-lg sm:text-xl font-black text-gray-900 leading-tight truncate">
                       {selectedCustomer.customerName}
                     </h2>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm font-medium text-gray-500 mt-0.5">
@@ -1028,7 +1195,7 @@ export default function CustomerCallingPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:flex lg:shrink-0">
                   {/* MANUAL CALL */}
                   <a
                     href={getTelHref(selectedCustomer.ContactNumber)}
@@ -1038,39 +1205,39 @@ export default function CustomerCallingPage() {
                         toast.error("This customer has no contact number.");
                       }
                     }}
-                    className="group flex items-center gap-3 text-left p-3 sm:p-3.5 rounded-2xl border border-gray-200 bg-white hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer"
+                    className="group flex items-center gap-3 text-left p-2 sm:p-2.5 rounded-2xl border border-gray-200 bg-gray-100 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer"
                   >
-                    <span className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+                    <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
                       <PhoneCall size={20} />
                     </span>
-                    <span className="min-w-0">
+                    <span className="min-w-0 lg:pr-2">
                       <span className="block text-sm font-extrabold text-gray-900">Manual call</span>
-                      <span className="hidden sm:block text-xs text-gray-500 truncate">Open the dialer and call {firstName} yourself</span>
+                      <span className="hidden sm:block lg:hidden xl:block text-xs text-gray-500 truncate">Open the dialer and call {firstName} yourself</span>
                     </span>
                   </a>
 
                   {/* AI CALL */}
                   <button
                     onClick={openAIModal}
-                    className="group flex items-center gap-3 text-left p-3 sm:p-3.5 rounded-2xl bg-[var(--color-primary)] text-white hover:opacity-95 shadow-[0_8px_24px_-12px_rgba(var(--color-primary-rgb),0.6)] transition-all cursor-pointer"
+                    className="group flex items-center gap-3 text-left p-2 sm:p-2.5 rounded-2xl bg-[var(--color-primary)] text-white hover:opacity-95 shadow-[0_8px_24px_-12px_rgba(var(--color-primary-rgb),0.6)] transition-all cursor-pointer"
                   >
-                   {/*  <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-                      <Sparkles size={20} />
-                    </span> */}
-                    <span className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-                     <img src="/taskbot.png" alt="Calling AGent" className="w-10 h-10" />
+                    <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+                      <img src="/taskbot.png" alt="Calling AGent" className="w-8 h-8 sm:w-9 sm:h-9" />
                     </span>
-                    <span className="min-w-0">
+                    <span className="min-w-0 lg:pr-2">
                       <span className="block text-sm font-extrabold">AI calling Agent</span>
-                      <span className="hidden sm:block text-xs text-white/75 truncate">Send an AI agent with a script or custom goal</span>
+                      <span className="hidden sm:block lg:hidden xl:block text-xs text-white/75 truncate">Send an AI agent with a script or custom goal</span>
                     </span>
                   </button>
                 </div>
               </div>
 
-              {/* Call history */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-gray-50/50 hide-scrollbar">
-                <div className="max-w-5xl mx-auto">
+              {/* Call history: THIS is the scrolling area of the right side */}
+              <div
+                ref={historyScrollRef}
+                className="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar p-3 sm:p-6 bg-gray-50/50"
+              >
+                <div className="max-w-5xl mx-auto pb-4">
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <div>
                       <div className="flex items-center gap-2">
@@ -1081,15 +1248,15 @@ export default function CustomerCallingPage() {
                     </div>
 
                     <button
-                      onClick={refreshLogs}
-                      disabled={isLogsLoading}
-                      className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-[var(--color-primary)] transition-colors cursor-pointer shrink-0"
+                      onClick={() => selectedId && loadLogs(String(selectedId), selectedCustomer?.ContactNumber)}
+                      disabled={showLogsLoading}
+                      className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-[var(--color-primary)] transition-colors cursor-pointer shrink-0 disabled:opacity-60"
                     >
-                      <RefreshCcw size={14} className={isLogsLoading ? "animate-spin" : ""} /> Sync logs
+                      <RefreshCcw size={14} className={showLogsLoading ? "animate-spin" : ""} /> Sync logs
                     </button>
                   </div>
 
-                  {isLogsLoading ? (
+                  {showLogsLoading ? (
                     <div className="flex flex-col gap-4">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="animate-pulse h-28 bg-white border border-gray-200 rounded-2xl w-full"></div>
@@ -1106,14 +1273,14 @@ export default function CustomerCallingPage() {
                   ) : (
                     <>
                       {/* Stats */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
                         {[
                           { label: "Total calls", value: callStats.total },
                           { label: "Answered", value: callStats.answered },
                           { label: "Not answered", value: callStats.missed },
                           { label: "Talk time", value: formatTalkTime(callStats.talk) },
                         ].map((s) => (
-                          <div key={s.label} className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+                          <div key={s.label} className="bg-white rounded-xl border border-gray-200 px-3 py-2.5 sm:px-4 sm:py-3">
                             <p className="text-xl font-extrabold text-gray-900 leading-tight">{s.value}</p>
                             <p className="text-xs font-medium text-gray-500 mt-0.5">{s.label}</p>
                           </div>
@@ -1175,21 +1342,20 @@ export default function CustomerCallingPage() {
           <div className="bg-white sm:rounded-3xl shadow-2xl border border-gray-200 w-full max-w-6xl flex flex-col relative overflow-hidden h-[100dvh] sm:max-h-[97vh]">
 
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/80 shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                {/* <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-[var(--color-primary)] to-purple-600 text-white shadow-md shrink-0">
-                  <Sparkles size={20} />
-                </div> */}
+            <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/80 shrink-0">
+              <div className="flex items-center gap-3 min-w-0 w-full">
                 <span className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-                     <img src="/taskbot.png" alt="Calling AGent" className="w-10 h-10" />
-                    </span>
+                  <img src="/taskbot.png" alt="Calling AGent" className="w-10 h-10" />
+                </span>
                 <div className="min-w-0">
                   <h2 className="text-lg font-extrabold text-gray-900">AI calling Agent</h2>
                   <p className="text-xs text-gray-500 font-medium truncate">
                     Calling {selectedCustomer?.customerName} ({selectedCustomer?.ContactNumber})
                   </p>
                 </div>
+                {/*  <div className=" ml-auto shrink-0 mr-2"> <VoicePicker value={voice} onChange={setVoice} disabled={isCalling} /></div> */}
               </div>
+
               <button onClick={closeAIModal} className="text-gray-400 hover:text-gray-700 bg-white p-2 rounded-xl border border-gray-200 shadow-sm transition-colors cursor-pointer shrink-0">
                 <X size={20} />
               </button>
@@ -1198,8 +1364,8 @@ export default function CustomerCallingPage() {
             {/* Body */}
             {!callResult ? (
               <div className="flex-1 min-h-0 flex flex-col sm:flex-row overflow-y-auto sm:overflow-hidden">
-                {/* Script list */}
-                <aside className="sm:w-[300px] shrink-0 bg-gray-50/60 border-b sm:border-b-0 sm:border-r border-gray-100 h-64 sm:h-auto sm:min-h-0">
+                {/* Script list (shorter on phones so it doesn't eat the screen) */}
+                <aside className="sm:w-[300px] shrink-0 bg-gray-50/60 border-b sm:border-b-0 sm:border-r border-gray-100 h-44 sm:h-auto sm:min-h-0">
                   <ScriptPicker
                     scripts={scripts}
                     loading={scriptsLoading}
@@ -1211,7 +1377,7 @@ export default function CustomerCallingPage() {
                 </aside>
 
                 {/* Instructions */}
-                <section className="flex-1 min-w-0 p-5 flex flex-col gap-4 sm:overflow-y-auto custom-scrollbar">
+                <section className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 sm:overflow-y-auto custom-scrollbar">
                   <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3.5 flex gap-3">
                     <Activity size={18} className="text-blue-600 shrink-0 mt-0.5" />
                     <p className="text-sm text-blue-800 leading-relaxed font-medium">
@@ -1349,9 +1515,10 @@ export default function CustomerCallingPage() {
               </div>
             )}
 
-            {/* Footer */}
+            {/* Footer (bottom padding respects the iPhone home bar) */}
             {!callResult ? (
-              <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3 shrink-0">
+              <div className="p-3 sm:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3 shrink-0">
+
                 <button
                   onClick={closeAIModal}
                   className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-200 bg-gray-100 rounded-xl transition-colors cursor-pointer"
@@ -1371,7 +1538,7 @@ export default function CustomerCallingPage() {
                 </button>
               </div>
             ) : (
-              <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-center shrink-0">
+              <div className="p-3 sm:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 border-t border-gray-100 bg-gray-50/50 flex justify-center shrink-0">
                 <button
                   onClick={closeAIModal}
                   className="px-8 py-2.5 text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] rounded-xl transition-colors cursor-pointer"

@@ -30,6 +30,7 @@ interface LeadsSectionProps<T extends Record<string, any>> {
     isCustomerPage?: boolean
     onAdd?: (id: string) => void;
     onEdit?: (id: string) => void;
+    onCall?: (lead: T) => void;
     onWhatsappClick?: (lead: T) => void;
     onMailClick?: (lead: T) => void;
     onFavourite?: (lead: T) => void;
@@ -49,6 +50,7 @@ export default function CustomerTable<T extends Record<string, any>>({
     allLabelLeads,
     onAdd,
     onEdit,
+    onCall,
     onWhatsappClick,
     onMailClick,
     onFavourite,
@@ -341,13 +343,23 @@ export default function CustomerTable<T extends Record<string, any>>({
                             </button>
 
                             <div className="flex items-center gap-5">
-                                <a
+                               {/*  <a
                                     href={`tel:+91${String(lead["ContactNumber"]) ?? String(lead["ContactNo"]) ?? ""}`}
                                     onClick={() => onAdd?.(lead._id)}
                                     className="text-white/90 hover:text-white transition-colors"
                                 >
                                     <MdPhone size={22} />
-                                </a>
+                                </a> */}
+
+                                <button
+                                    onClick={() => {
+                                        onCall?.(lead)
+                                         onAdd?.(lead._id)
+                                      }}
+                                    className="text-white/90 hover:text-white transition-colors"
+                                >
+                                    <MdPhone size={22} />
+                                </button>
 
                                 <button
                                     onClick={() => onMailClick?.(lead)}

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrickWallFire, Podcast, School, Cable, ShieldUser, NotebookTabs, Home, User, Star, Users } from "lucide-react";
+import { BrickWallFire, Podcast, School, Cable, ShieldUser, NotebookTabs, Home, User, Star, Users, PhoneCall } from "lucide-react";
 
 import Link from "next/link";
 import { MdClose } from "react-icons/md";
@@ -35,7 +35,11 @@ export default function MobileHamburger() {
       url: "/customer",
       icon: <User size={22} />,
     },
-
+    {
+      title: "Customer Calling",
+      url: "/customer/calling",
+      icon: <PhoneCall size={22} />,
+    },
     {
       title: "Employee",
       url: "/employee-manage",

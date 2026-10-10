@@ -62,7 +62,7 @@ const data = {
       url: "/followups/customer",
       icon: PlusSquare,
     },
-      {
+    {
       title: "customer calling",
       url: "/customer/calling",
       icon: PhoneCall,
@@ -88,7 +88,7 @@ const data = {
       url: "/customer/enquiry",
       icon: Info,
     }, */
-        {
+    {
       title: "Task",
       url: "/task",
       icon: Pointer,
@@ -161,7 +161,7 @@ const data = {
           title: "Sub Locations",
           url: "/masters/sublocation",
         },
-         {
+        {
           title: "Employee Department",
           url: "/masters/department",
         },
@@ -264,9 +264,13 @@ const data = {
       icon: LineChart,
       items: [
         {
+          title: "Sarvam Report",
+          url: "/reports/sarvam",
+        },
+        {
           title: "Calling Report",
           url: "/reports/call-report",
-        },
+        },    
         {
           title: "User Activity",
           url: "/reports/activity",
@@ -354,6 +358,10 @@ const data = {
         {
           title: "AI",
           url: "/configuration/ai"
+        },
+        {
+          title: "Sarvam",
+          url: "/configuration/sarvam",
         },
         {
           title: "Tabbly",
@@ -463,6 +471,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           if (
             subItem.title === "Customer Fields" &&
             admin?.role !== "administrator"
+          ) {
+            return false;
+          }
+          return true;
+        }),
+      };
+    }
+
+    if (item.title === "Reports") {
+      return {
+        ...item,
+        items: item.items?.filter((subItem) => {
+          // Hide "Sarvam Report" if not admin or city_admin
+          if (
+            subItem.title === "Sarvam Report" &&
+            (admin?.role !== "administrator" && admin?.role !== "city_admin")
           ) {
             return false;
           }

@@ -96,6 +96,7 @@ import CustomerViewDialog from "../component/popups/CustomerviewDialog";
 import { getCustomerFields } from "@/store/masters/customerfields/customerfields";
 import EmailCampaignAgentWorkspace from "../component/aiagents/EmailCampaignAgentWorkspace";
 import VideoProjectWorkspace from "../component/aiagents/VideoProjectWorkspace";
+import CallDialog, { CallTarget } from "../component/popups/CallDialog";
 
 
 interface DeleteAllDialogDataInterface { }
@@ -218,6 +219,9 @@ export default function Customer() {
   const [isFetchingWhatsappTemplates, setIsFetchingWhatsappTemplates] = useState(false);
   const [isFetchingMailTemplates, setIsFetchingMailTemplates] = useState(false);
   const [isFetchingUsers, setIsFetchingUsers] = useState(false);
+   const [callTarget, setCallTarget] = useState<CallTarget | null>(null);
+ 
+
 
 
   // Derives from your existing users array — assumes users have a `role` field
@@ -770,6 +774,15 @@ export default function Customer() {
   const handleViewClick = (id: string | number) => {
     setCustomerToView(id);
     setIsViewOpen(true);
+  };
+
+    // The handler passes the number (and id/name) to the dialog
+  const handleCallClick = (customer: (typeof customerData)[number]) => {
+    setCallTarget({
+      customerId: customer._id,
+      phone: customer.ContactNumber,
+      name: customer.Name,
+    });
   };
 
   const handleFollowups = async (id: string, Name: string) => {
@@ -2262,6 +2275,15 @@ export default function Customer() {
         }}
       />
 
+       <CallDialog
+        target={callTarget}
+        onClose={() => setCallTarget(null)}
+        onCallStarted={(res) => {
+          // optional: refresh your call logs here, e.g. setTimeout(refreshLogs, 6000)
+          console.log("AI call started", res);
+        }}
+      />
+
       {/* Delete Dialog */}
       <DeleteDialog<DeleteDialogDataInterface>
         isOpen={isDeleteDialogOpen}
@@ -3026,6 +3048,9 @@ export default function Customer() {
           allLabelLeads={phoneViewAllHaders}
           onAdd={(id) => addFollowupFromDialogue(id)}
           onEdit={(id) => /* router.push(`/customer/edit/${id}`) */ handleEditClick(id)}
+          onCall={(lead) => {
+            handleCallClick(lead)
+          }}
           onWhatsappClick={(lead) => {
             /*   setSelectedCustomers([lead._id]);
               setIsWhatsappAllOpen(true);
@@ -4339,7 +4364,8 @@ export default function Customer() {
                                               <div className="flex items-center gap-1">
                                                 <Button
                                                   component="a"
-                                                  onClick={() => handleCall({ customerNumber: item.ContactNumber })}
+                                                 /*  onClick={() => handleCall({ customerNumber: item.ContactNumber })} */
+                                                  onClick={() => handleCallClick(item)}
                                                   sx={{
                                                     backgroundColor: "#E8F5E9",
                                                     color: "var(--color-primary)",
