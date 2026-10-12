@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { getCustomerById } from "@/store/customer"; 
+import { getCustomerAccount } from "@/store/customer"; 
 import {
   Mail,
   Phone,
@@ -48,7 +48,7 @@ export default function ClientProfilePage() {
       
       setIsLoading(true);
       try {
-        const res = await getCustomerById(customer.id);
+        const res = await getCustomerAccount(customer.id);
         const data = res?.data || res;
         if (data) {
           setProfileData(data);

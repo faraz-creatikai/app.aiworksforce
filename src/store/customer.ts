@@ -860,3 +860,17 @@ export const getCustomerPortalData = async () => {
     return null;
   }
 };
+
+
+export const getCustomerAccount = async (id: string) => {
+  try {
+    const response = await fetch(API_ROUTES.CUSTOMER.CUSTOMER_ACCOUNT(id), { credentials: "include" });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.log("SERVER ERROR: ", error)
+    return null;
+  }
+}
