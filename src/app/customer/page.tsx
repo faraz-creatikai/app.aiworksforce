@@ -219,8 +219,8 @@ export default function Customer() {
   const [isFetchingWhatsappTemplates, setIsFetchingWhatsappTemplates] = useState(false);
   const [isFetchingMailTemplates, setIsFetchingMailTemplates] = useState(false);
   const [isFetchingUsers, setIsFetchingUsers] = useState(false);
-   const [callTarget, setCallTarget] = useState<CallTarget | null>(null);
- 
+  const [callTarget, setCallTarget] = useState<CallTarget | null>(null);
+
 
 
 
@@ -776,7 +776,7 @@ export default function Customer() {
     setIsViewOpen(true);
   };
 
-    // The handler passes the number (and id/name) to the dialog
+  // The handler passes the number (and id/name) to the dialog
   const handleCallClick = (customer: (typeof customerData)[number]) => {
     setCallTarget({
       customerId: customer._id,
@@ -2275,7 +2275,7 @@ export default function Customer() {
         }}
       />
 
-       <CallDialog
+      <CallDialog
         target={callTarget}
         onClose={() => setCallTarget(null)}
         onCallStarted={(res) => {
@@ -4364,7 +4364,7 @@ export default function Customer() {
                                               <div className="flex items-center gap-1">
                                                 <Button
                                                   component="a"
-                                                 /*  onClick={() => handleCall({ customerNumber: item.ContactNumber })} */
+                                                  /*  onClick={() => handleCall({ customerNumber: item.ContactNumber })} */
                                                   onClick={() => handleCallClick(item)}
                                                   sx={{
                                                     backgroundColor: "#E8F5E9",

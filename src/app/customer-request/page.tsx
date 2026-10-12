@@ -1,13 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Check, X, ChevronLeft, ChevronRight, Building, Mail, FileText, Calendar, KeyRound, Trash2 } from "lucide-react";
-import { CustomerRequestModel } from "@/store/customer-request/customerRequest.interface";
 import { 
   approveCustomerRequest, 
   denyCustomerRequest, 
   getCustomerRequests,
   deleteCustomerRequests 
 } from "@/store/customer-request/customerRequest";
+import { CustomerRequestModel } from "@/store/customer-request/customerRequest.interface";
 
 export default function CustomerRequestsAdmin() {
   // State
