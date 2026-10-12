@@ -13,6 +13,7 @@ const map: Record<string, IconType> = {
   NEW_USER_REQUEST: RiUserFollowFill,
   CUSTOMER_FOLLOWUP_TAKEN: RiUserFollowFill,
   FOLLOWUP_DUE: BsFillStopwatchFill,
+  NEW_CUSTOMER_REQUEST:BsFillPersonPlusFill,
   ORDER_PLACED: "🛒",
   PAYMENT_RECEIVED: "💳",
   ALERT: "⚠️",
