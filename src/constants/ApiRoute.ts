@@ -76,6 +76,13 @@ export const API_ROUTES = {
     PORTAL_DASHBOARD: `${BASE_URL}/customer/portal-dashboard`,
     PORTAL_UPDATES: `${BASE_URL}/customer/portel-updates`
   },
+  CUSTOMER_REQUEST: {
+    CREATE_PUBLIC: `${BASE_URL}/customer-request/public/request`,
+    GET_ALL: `${BASE_URL}/customer-request/admin`, // Base URL for query params
+    APPROVE: (id: string) => `${BASE_URL}/customer-request/admin/${id}/approve`,
+    DENY: (id: string) => `${BASE_URL}/customer-request/admin/${id}/deny`,
+    DELETE_BULK: `${BASE_URL}/customer-request/admin`,
+  },
   ENQUIRY: {
     // Customer Endpoints
     CREATE_CUSTOMER: `${BASE_URL}/enquiry/customer`,

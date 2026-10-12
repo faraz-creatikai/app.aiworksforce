@@ -46,6 +46,11 @@ export function getTypeConfig(type: string): TypeConfig {
       color: "text-sky-600",
       bg:    "bg-sky-50",
     },
+    NEW_CUSTOMER_REQUEST: {
+      icon:  BsFillPersonPlusFill,
+      color: "text-purple-600",
+      bg:    "bg-purple-50",
+    },
     FOLLOWUP_DUE:{
       icon:  BsFillStopwatchFill,
       color: "text-[var(--color-secondary)]",
@@ -93,6 +98,7 @@ export function getTypeLink(type: string, entityId: string): string | null {
     case "ALERT":             return `/alerts`;
     case "ERROR":             return `/logs`;
     case "FOLLOWUP_DUE":      return `/followups/customer`;
+    case "NEW_CUSTOMER_REQUEST": return `/customer-request`;
     default:                  return null;
   }
 }
