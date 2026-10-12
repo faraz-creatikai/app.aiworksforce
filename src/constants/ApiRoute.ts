@@ -74,7 +74,8 @@ export const API_ROUTES = {
     CHECK_AUTH: `${BASE_URL}/customer/check-auth`,
     LOGOUT: `${BASE_URL}/customer/logout`,
     PORTAL_DASHBOARD: `${BASE_URL}/customer/portal-dashboard`,
-    PORTAL_UPDATES: `${BASE_URL}/customer/portel-updates`
+    PORTAL_UPDATES: `${BASE_URL}/customer/portal-updates`,
+    CUSTOMER_ACCOUNT: (id: string) => `${BASE_URL}/customer/account/${id}`,
   },
   CUSTOMER_REQUEST: {
     CREATE_PUBLIC: `${BASE_URL}/customer-request/public/request`,
