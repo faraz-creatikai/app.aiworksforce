@@ -340,10 +340,11 @@ export default function AdminSupportPage() {
                     // In Admin view, "You" are the admin (right), Customer is left
                     const isAdmin = !!msg.adminId;
                     const senderName = isAdmin ? (msg.admin?.name || "Support") : (msg.customer?.customerName || "Client");
+                    const senderImage = isAdmin ? JSON.parse(msg.admin?.AdminImage || "null") : JSON.parse(msg.customer?.CustomerImage || "null");
                     
                     const avatarContent = isAdmin 
-                      ? <div className="h-8 w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-md">{getInitials(senderName)}</div>
-                      : <div className="h-8 w-8 rounded-full bg-white border border-gray-200 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">{getInitials(senderName)}</div>;
+                      ? <div className="h-8 w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-md">{senderImage ? <img src={senderImage} alt={senderName} className="h-full w-full rounded-full object-cover" /> : getInitials(senderName)}</div>
+                      : <div className="h-8 w-8 rounded-full bg-white border border-gray-200 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">{senderImage ? <img src={senderImage} alt={senderName} className="h-full w-full rounded-full object-cover" /> : getInitials(senderName)}</div>;
 
                     return (
                       <div key={msg.id} className={`flex gap-3 w-full max-w-[85%] sm:max-w-[75%] ${isAdmin ? "ml-auto flex-row-reverse" : ""}`}>

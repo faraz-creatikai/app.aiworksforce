@@ -74,7 +74,7 @@ export default function ClientUpdatesPage() {
         </button>
       </header>
 
-      <div className="flex gap-1.5 overflow-x-auto" role="tablist" aria-label="Filter updates">
+      <div className="flex gap-1.5 overflow-x-auto hide-scrollbar" role="tablist" aria-label="Filter updates">
         {FILTERS.map((f) => (
           <button
             key={f.key}

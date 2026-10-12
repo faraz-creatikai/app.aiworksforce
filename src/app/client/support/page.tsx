@@ -347,14 +347,15 @@ export default function ClientSupportPage() {
                         {activeTicket.messages?.map((msg, index) => {
                             const isCustomer = !!msg.customerId;
                             const senderName = isCustomer ? "You" : msg.admin?.name || "Support Team";
+                            const senderImage = isCustomer ? JSON.parse(msg.customer?.CustomerImage) : JSON.parse(msg.admin?.AdminImage);
                             const senderLevel = !isCustomer && msg.admin?.role === "administrator" ? "Admin" : msg.admin?.role === "city_admin" ? "Sub Admin" : msg.admin?.role === "user" ? "Moderator" : "";
 
                             // Standardizing avatar display securely
                             let avatarContent;
                             if (isCustomer) {
-                                avatarContent = <div className="h-8 w-8 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs font-bold shrink-0">{getInitials(senderName)}</div>;
+                                avatarContent = <div className="h-8 w-8 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs font-bold shrink-0">{ (senderImage && isCustomer) ? <img src={senderImage} alt={senderName} className="h-full w-full rounded-full object-cover" /> : getInitials(senderName)}</div>;
                             } else {
-                                avatarContent = <div className="h-8 w-8 rounded-full bg-[var(--color-primary-lighter)] text-[var(--color-primary-dark)] flex items-center justify-center text-xs font-bold shrink-0 shadow-sm ring-1 ring-[var(--color-primary-light)]">{getInitials(senderName)}</div>;
+                                avatarContent = <div className="h-8 w-8 rounded-full bg-[var(--color-primary-lighter)] text-[var(--color-primary-dark)] flex items-center justify-center text-xs font-bold shrink-0 shadow-sm ring-1 ring-[var(--color-primary-light)]">{ (senderImage && !isCustomer) ? <img src={senderImage} alt={senderName} className="h-full w-full rounded-full object-cover" /> : getInitials(senderName)}</div>;
                             }
 
                             return (
