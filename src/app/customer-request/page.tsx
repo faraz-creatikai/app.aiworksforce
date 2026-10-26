@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Check, X, ChevronLeft, ChevronRight, Building, Mail, FileText, Calendar, KeyRound, Trash2 } from "lucide-react";
+import { Check, X, ChevronLeft, ChevronRight, Building, Mail, FileText, Calendar, KeyRound, Trash2, Phone } from "lucide-react";
 import { 
   approveCustomerRequest, 
   denyCustomerRequest, 
@@ -241,6 +241,12 @@ export default function CustomerRequestsAdmin() {
                     <Mail className="w-4 h-4 text-gray-400 shrink-0" />
                     <span className="truncate">{req.email}</span>
                   </div>
+                  {req.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="truncate">{req.phone}</span>
+                    </div>
+                  )}
                   {req.companyName && (
                     <div className="flex items-center gap-2">
                       <Building className="w-4 h-4 text-gray-400 shrink-0" />

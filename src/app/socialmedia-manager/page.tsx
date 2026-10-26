@@ -16,6 +16,8 @@ import { createInstagramModule } from "./platforms/instagram/instagram";
 import { createFacebookModule } from "./platforms/facebook/facebook";
 import InstagramAnalyticsPanel from "./platforms/instagram/InstagramAnalyticPanel";
 import FacebookAnalyticsPanel from "./platforms/facebook/FacebookAnalyticPanel";
+import { createLinkedinModule } from "./platforms/linkedin/linkedin";
+import LinkedinDashboard from "./platforms/linkedin/LInkedinDashboard";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -34,9 +36,13 @@ export interface SocialPost {
 export interface ApiResponse {
   success: boolean;
   posts: SocialPost[];
+  profile?: {
+    name?: string;
+    picture?: string;
+  };
 }
 
-export type PlatformId = "instagram" | "facebook" | "youtube" | "twitter";
+export type PlatformId = "instagram" | "facebook" | "linkedin" | "youtube" | "twitter";
 export type PlatformStatus = "connected" | "not_connected" | "coming_soon";
 
 export interface SetupStep {
@@ -79,7 +85,7 @@ function createYoutubeModule(): PlatformModuleConfig {
       </svg>
     ),
     fetchPosts: async () => ({ success: false, posts: [] }),
-    connect: () => {},
+    connect: () => { },
   };
 }
 
@@ -99,7 +105,7 @@ function createTwitterModule(): PlatformModuleConfig {
       </svg>
     ),
     fetchPosts: async () => ({ success: false, posts: [] }),
-    connect: () => {},
+    connect: () => { },
   };
 }
 
@@ -121,6 +127,7 @@ const PLATFORM_MODULES: PlatformModuleConfig[] = [
     schedulePost: scheduleFacebookPost,
     getScheduledPosts: getFacebookScheduledPosts,
   },
+  createLinkedinModule(),
   createYoutubeModule(),
   createTwitterModule(),
 ];
@@ -163,8 +170,8 @@ function PlatformPill({
         ${active
           ? "border-[var(--color-primary-light)] bg-[var(--color-primary)] text-[var(--color-primary-lighter)] shadow-sm"
           : !isComingSoon
-          ? "border-transparent bg-gray-100  hover:bg-[var(--color-primary-light)] text-gray-500  hover:text-gray-700"
-          : " bg-gray-100"}
+            ? "border-transparent bg-gray-100  hover:bg-[var(--color-primary-light)] text-gray-500  hover:text-gray-700"
+            : " bg-gray-100"}
       `}
     >
       <span className="w-5 h-5 rounded-md flex items-center justify-center text-white flex-shrink-0" style={{ background: module.color }}>
@@ -181,9 +188,8 @@ function PlatformPill({
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: boolean }) {
   return (
-    <div className={`rounded-2xl p-4 border flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-      accent ? "bg-[var(--color-primary)] border-[var(--color-primary-dark)] text-white" : "bg-white border-[var(--color-primary-light)] text-[var(--color-primary-darker)]"
-    }`}>
+    <div className={`rounded-2xl p-4 border flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${accent ? "bg-[var(--color-primary)] border-[var(--color-primary-dark)] text-white" : "bg-white border-[var(--color-primary-light)] text-[var(--color-primary-darker)]"
+      }`}>
       <span className={`text-[10px] font-semibold uppercase tracking-widest ${accent ? "text-[var(--color-primary-light)]" : "text-[var(--color-gray)]"}`}>{label}</span>
       <span className="text-2xl font-black leading-none">{value}</span>
       {sub && <span className={`text-[10px] mt-0.5 ${accent ? "text-[var(--color-primary-light)]" : "text-[var(--color-gray)]"}`}>{sub}</span>}
@@ -232,7 +238,7 @@ function ReelCard({ post }: { post: SocialPost }) {
     const el = videoRef.current;
     if (!el) return;
     if (playing) { el.pause(); el.currentTime = 0; setPlaying(false); }
-    else { el.play().catch(() => {}); setPlaying(true); }
+    else { el.play().catch(() => { }); setPlaying(true); }
   };
   return (
     <div className="group bg-white rounded-2xl border border-[var(--color-primary-light)] overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col">
@@ -437,18 +443,18 @@ function PostsPanel({
     (p) => !filterText || p.caption?.toLowerCase().includes(filterText.toLowerCase())
   );
 
-  const totalPosts   = posts.length;
-  const withCaption  = posts.filter((p) => p.caption).length;
-  const reels        = posts.filter(isVideoPost).length;
-  const latestPost   = posts[0] ? formatDate(posts[0].timestamp) : "—";
+  const totalPosts = posts.length;
+  const withCaption = posts.filter((p) => p.caption).length;
+  const reels = posts.filter(isVideoPost).length;
+  const latestPost = posts[0] ? formatDate(posts[0].timestamp) : "—";
 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Total Posts"   value={totalPosts}  sub="All time"   accent />
-        <StatCard label="With Caption"  value={withCaption} sub={`${totalPosts ? Math.round((withCaption / totalPosts) * 100) : 0}%`} />
-        <StatCard label="Reels"         value={reels}       sub="Video content" />
-        <StatCard label="Latest Post"   value={latestPost}  sub="Most recent" />
+        <StatCard label="Total Posts" value={totalPosts} sub="All time" accent />
+        <StatCard label="With Caption" value={withCaption} sub={`${totalPosts ? Math.round((withCaption / totalPosts) * 100) : 0}%`} />
+        <StatCard label="Reels" value={reels} sub="Video content" />
+        <StatCard label="Latest Post" value={latestPost} sub="Most recent" />
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -457,11 +463,10 @@ function PostsPanel({
             <button
               key={tab}
               onClick={() => setContentTab(tab)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold capitalize transition-all duration-200 cursor-pointer ${
-                contentTab === tab
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold capitalize transition-all duration-200 cursor-pointer ${contentTab === tab
                   ? "bg-[var(--color-primary)] text-white shadow-sm"
                   : "text-[var(--color-gray)] hover:text-[var(--color-primary)]"
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -532,25 +537,25 @@ function PostsPanel({
       )}
 
       {/* ── Analytics tab ── */}
-     {contentTab === "analytics" && (
-  activeModule.id === "instagram"
-    ? <InstagramAnalyticsPanel /> : 
-    activeModule.id === "facebook"
-    ? <FacebookAnalyticsPanel />
-    : (
-       <div className="bg-white rounded-2xl border border-[var(--color-primary-light)] p-10 flex flex-col items-center gap-4 shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-[var(--color-primary-lighter)] flex items-center justify-center">
-            <svg className="w-7 h-7 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <div className="text-center">
-            <h3 className="font-bold text-[var(--color-primary-darker)]">Analytics Coming Soon</h3>
-            <p className="text-sm text-[var(--color-gray)] mt-1 max-w-xs">Reach, impressions and engagement stats will appear here.</p>
-          </div>
-        </div>
-    )
-)}
+      {contentTab === "analytics" && (
+        activeModule.id === "instagram"
+          ? <InstagramAnalyticsPanel /> :
+          activeModule.id === "facebook"
+            ? <FacebookAnalyticsPanel />
+            : (
+              <div className="bg-white rounded-2xl border border-[var(--color-primary-light)] p-10 flex flex-col items-center gap-4 shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-[var(--color-primary-lighter)] flex items-center justify-center">
+                  <svg className="w-7 h-7 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <h3 className="font-bold text-[var(--color-primary-darker)]">Analytics Coming Soon</h3>
+                  <p className="text-sm text-[var(--color-gray)] mt-1 max-w-xs">Reach, impressions and engagement stats will appear here.</p>
+                </div>
+              </div>
+            )
+      )}
 
       {/* ── Scheduled tab ──
           Renders the generic SchedulerPanel wired to the active platform's
@@ -597,6 +602,7 @@ export default function SocialMediaManagerPage() {
   );
 
   const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [activeProfile, setActiveProfile] = useState<{ name?: string, picture?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
@@ -650,30 +656,30 @@ export default function SocialMediaManagerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-useEffect(() => {
-  if (!initDone.current) return;
-  const mod = PLATFORM_MODULES.find((m) => m.id === activePlatformId);
-  if (!mod || mod.defaultStatus === "coming_soon") return;
+  useEffect(() => {
+    if (!initDone.current) return;
+    const mod = PLATFORM_MODULES.find((m) => m.id === activePlatformId);
+    if (!mod || mod.defaultStatus === "coming_soon") return;
 
-  const tryFetch = async () => {
-    setLoading(true);
-    setError(null);
-    setPosts([]);
-    const res = await mod.fetchPosts();
-    if (res.success) {
-      setPlatformStatuses((prev) => ({ ...prev, [activePlatformId]: "connected" }));
-      setPosts(res.posts);
-    } else if (platformStatuses[activePlatformId] !== "connected") {
-      // genuinely not connected — show setup guide
+    const tryFetch = async () => {
+      setLoading(true);
+      setError(null);
       setPosts([]);
-    } else {
-      setError("Failed to load posts.");
-    }
-    setLoading(false);
-  };
+      const res = await mod.fetchPosts();
+      if (res.success) {
+        setPlatformStatuses((prev) => ({ ...prev, [activePlatformId]: "connected" }));
+        setPosts(res.posts);
+      } else if (platformStatuses[activePlatformId] !== "connected") {
+        // genuinely not connected — show setup guide
+        setPosts([]);
+      } else {
+        setError("Failed to load posts.");
+      }
+      setLoading(false);
+    };
 
-  tryFetch();
-}, [activePlatformId]);
+    tryFetch();
+  }, [activePlatformId]);
 
   const connectedCount = Object.values(platformStatuses).filter((s) => s === "connected").length;
 
@@ -681,7 +687,7 @@ useEffect(() => {
 
   return (
     <div className="flex flex-col gap-5 p-6 bg-white rounded-md">
-      
+
       {showDisconnectDialog && (
         <DisconnectDialog
           module={activeModule}
@@ -698,6 +704,21 @@ useEffect(() => {
           <p className="text-xs text-[var(--color-gray)] mt-0.5">Manage and review your connected platforms</p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {/* 👈 NEW: Safely renders ONLY if the module returned a profile */}
+          {activeStatus === "connected" && activeProfile && (
+            <div className="flex items-center gap-2 mr-2 bg-gray-50 border border-gray-200 py-1 pl-1 pr-3 rounded-full">
+              {activeProfile.picture ? (
+                <img src={activeProfile.picture} alt="Profile" className="w-6 h-6 rounded-full object-cover" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center text-xs font-bold">
+                  {activeProfile.name?.charAt(0) || "U"}
+                </div>
+              )}
+              <span className="text-xs font-bold text-gray-700 truncate max-w-[120px]">
+                {activeProfile.name}
+              </span>
+            </div>
+          )}
           {connectedCount > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -762,9 +783,18 @@ useEffect(() => {
             <span className="text-xs font-semibold text-amber-700">In development</span>
           </div>
         </div>
-      ) : activeStatus === "not_connected" ? (
+     ) : activeStatus === "not_connected" ? (
         <SetupGuide module={activeModule} onConnect={() => activeModule.connect(admin._id)} />
+      ) : activePlatformId === "linkedin" ? (
+        // 👈 NEW: LinkedIn gets its completely separate UI!
+        <LinkedinDashboard
+          posts={posts} 
+          loading={loading} 
+          error={error} 
+          onRefresh={() => fetchPosts(activePlatformId)} 
+        />
       ) : (
+        // 👈 EXISTING: Facebook and Instagram continue using the generic PostsPanel untouched!
         <PostsPanel
           posts={posts}
           loading={loading}

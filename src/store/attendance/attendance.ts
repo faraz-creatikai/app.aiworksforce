@@ -173,6 +173,19 @@ export const getEmployeeById = async (id: string) => {
   }
 }
 
+export const getEmployeeForAdminById = async (id: string) => {
+  try {
+    const response = await fetch(API_ROUTES.ATTENDANCE.GET_FOR_ADMIN_BY_ID(id), { credentials: "include" });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.log("SERVER ERROR: ", error)
+    return null;
+  }
+}
+
 
 // ----------------------------------------------------
 // 1. GET ALL EMPLOYEES (Standard)

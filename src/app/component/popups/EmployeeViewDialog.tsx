@@ -25,8 +25,9 @@ import {
 import toast from "react-hot-toast";
 
 // Ensure you create this API function in your @/store/employee file!
-import { getEmployeeById } from "@/store/attendance/attendance"; 
+
 import PopupMenu from "./PopupMenu";
+import { getEmployeeForAdminById } from "@/store/attendance/attendance";
 
 /* ============================================================
    TYPES
@@ -239,7 +240,7 @@ export default function EmployeeViewDialog({ isOpen, onClose, employeeId, onEdit
     const fetchEmployee = async () => {
       setLoading(true);
       try {
-        const res = await getEmployeeById(employeeId);
+        const res = await getEmployeeForAdminById(employeeId);
         if (!res) {
           toast.error("Employee not found");
           onClose();

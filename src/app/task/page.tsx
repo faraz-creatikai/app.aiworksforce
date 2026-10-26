@@ -342,12 +342,12 @@ export default function AdminTasksPage() {
         const res = await addAdminTask(payload);
         if (res?.success) toast.success("Task assigned successfully");
       } else if (modalMode === "edit" && selectedTaskId) {
-        const payload: AdminUpdateTaskPayload = {
+        const payload: any = {
           title: formData.title,
           description: formData.description,
           priority: formData.priority,
           dueDate: formData.dueDate,
-          assignedToId: formData.assignedToIds[0],
+          assignedToIds: formData.assignedToIds,
           customerId: formData.customerId
         };
         const res = await updateAdminTask(selectedTaskId, payload);

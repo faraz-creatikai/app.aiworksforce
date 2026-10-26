@@ -108,6 +108,7 @@ export const API_ROUTES = {
     CLOCK_IN: `${BASE_URL}/attendance/employee/clock-in`,
     CLOCK_OUT: `${BASE_URL}/attendance/employee/clock-out`,
     GET_BY_ID: (id: string) => `${BASE_URL}/attendance/employee/${id}`,
+    GET_FOR_ADMIN_BY_ID: (id: string) => `${BASE_URL}/attendance/admin/employee/${id}`,
 
     GET_ALL: `${BASE_URL}/attendance/employee`,
     // 🚨 NEW: Added Params route
@@ -136,6 +137,14 @@ export const API_ROUTES = {
     GET_ATTENDANCE_TREND: (startDate: string, endDate: string) => `${BASE_URL}/attendance/trend?startDate=${startDate}&endDate=${endDate}`,
     GET_ATTENDANCE_OVERVIEW: (startDate: string, endDate: string) => `${BASE_URL}/attendance/overview?startDate=${startDate}&endDate=${endDate}`
 
+  },
+  LINKEDIN: {
+    GET_AUTH_URL: `${BASE_URL}/linkedin/auth-url`,
+    CALLBACK: `${BASE_URL}/linkedin/callback`,
+    STATUS: `${BASE_URL}/linkedin/status`,
+    DISCONNECT: `${BASE_URL}/linkedin/disconnect`,
+    PUBLISH: `${BASE_URL}/linkedin/publish`,
+    GET_POSTS: (params: string) => `${BASE_URL}/linkedin/posts?${params}`,
   },
   COMPANYPROJECTS: {
     GET_ALL: `${BASE_URL}/com/pro`,
@@ -631,7 +640,7 @@ export const API_ROUTES = {
 
 
   ADMIN: {
-    // 🔓 Public Routes
+    //Public Routes
     SIGNUP: `${BASE_URL}/admin/signup`,
     LOGIN: `${BASE_URL}/admin/login`,
     LOGOUT: `${BASE_URL}/admin/logout`,
@@ -642,10 +651,10 @@ export const API_ROUTES = {
       DELETE_API_KEY: (id: string) => `${BASE_URL}/admin/ai/delete-api-key/${id}`
     },
 
-    // 🔐 Protected Routes
+    //Protected Routes
     CHECK: `${BASE_URL}/admin/check`,
 
-    // 👤 Admin Management
+    //Admin Management
     CREATE: `${BASE_URL}/admin/create`,
     GET_ALL: `${BASE_URL}/admin/all`,
     GET_BY_ID: (id: String) => `${BASE_URL}/admin/${id}`,

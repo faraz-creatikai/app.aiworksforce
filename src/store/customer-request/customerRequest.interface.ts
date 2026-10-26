@@ -10,6 +10,7 @@ export interface CustomerRequestModel {
     status: "pending" | "approved" | "denied";
     processedById?: string;
     processedBy?: { name: string; email: string };
+    phone?: string;
     createdAt: string;
     updatedAt: string;
 }
