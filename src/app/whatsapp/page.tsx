@@ -19,7 +19,7 @@ export default function WhatsAppIntegrationPage() {
     phone_number_id: null,
   });
 
-  useEffect(() => {
+useEffect(() => {
     window.fbAsyncInit = function () {
       window.FB.init({
         appId: process.env.NEXT_PUBLIC_META_APP_ID || "",
@@ -42,30 +42,28 @@ export default function WhatsAppIntegrationPage() {
     })(document, "script", "facebook-jssdk");
 
     const sessionInfoListener = (event: MessageEvent) => {
-      const allowedOrigins = [
-        "https://www.facebook.com",
-        "https://web.facebook.com",
-        "https://business.facebook.com"
-      ];
-      if (!allowedOrigins.includes(event.origin)) return;
-
+      // 🛑 DEBUG FIX: We are removing the strict `allowedOrigins` check temporarily.
+      // We want to see EVERYTHING the popup tries to send to this window.
+      
       try {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-        const eventName = data?.event;
+        
+        // Only log if it looks like a Meta Embedded Signup event to avoid spam
+        if (data?.type === "WA_EMBEDDED_SIGNUP") {
+            console.log("🚨 RAW META EVENT DETECTED:", {
+                origin: event.origin,
+                eventName: data.event,
+                payload: data.data
+            });
 
-        // 🛑 FIX 1: Catch all possible Meta FINISH events, not just "FINISH"
-        if (
-          data?.type === "WA_EMBEDDED_SIGNUP" &&
-          (eventName === "FINISH" || 
-           eventName === "FINISH_ONLY_WABA" || 
-           eventName === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING")
-        ) {
-          console.log("✅ Received WhatsApp IDs from Meta popup:", data.data);
-          signupData.current.phone_number_id = data.data.phone_number_id || null;
-          signupData.current.waba_id = data.data.waba_id || null;
+            if (data.event.includes("FINISH")) {
+                console.log("✅ Extracting IDs now...");
+                signupData.current.phone_number_id = data.data?.phone_number_id || null;
+                signupData.current.waba_id = data.data?.waba_id || null;
+            }
         }
       } catch (err) {
-        // Ignore non-JSON messages
+        // Ignore parsing errors for non-JSON messages
       }
     };
 
