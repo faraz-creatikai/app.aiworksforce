@@ -13,6 +13,8 @@ export default function WhatsAppIntegrationPage() {
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+const [isChecking, setIsChecking] = useState(true); // Shows a loader while checking DB
   
   const signupData = useRef<{ waba_id: string | null; phone_number_id: string | null }>({
     waba_id: null,
@@ -20,6 +22,28 @@ export default function WhatsAppIntegrationPage() {
   });
 
 useEffect(() => {
+
+    const checkConnectionStatus = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social-auth/check-meta-whatsapp`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // Ensure cookies/tokens are sent
+      });
+      
+      const data = await res.json();
+      if (data.connected) {
+        setIsConnected(true);
+      }
+    } catch (error) {
+      console.error("Failed to check connection status:", error);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  checkConnectionStatus();
+
     window.fbAsyncInit = function () {
       window.FB.init({
         appId: process.env.NEXT_PUBLIC_META_APP_ID || "",
@@ -130,6 +154,7 @@ useEffect(() => {
     );
   };
 
+
   return (
     <div className="max-w-2xl mx-auto p-8 mt-10 bg-white rounded-lg shadow-md">
       <h1 className="text-2xl font-bold mb-2">WhatsApp Channel Setup</h1>
@@ -143,13 +168,23 @@ useEffect(() => {
         </div>
       )}
 
-      <button
-        onClick={handleConnectWhatsApp}
-        disabled={!isSdkLoaded || isLoading}
-        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-[#25D366] hover:bg-[#128C7E] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#25D366] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
-      >
-        {isLoading ? "Connecting..." : "Connect Official WhatsApp"}
-      </button>
+      {isChecking ? (
+        <div className="text-center py-4 text-gray-500">Checking connection status...</div>
+      ) : isConnected ? (
+        <div className="p-6 border rounded-lg bg-green-50 border-green-200 text-center">
+          <div className="text-green-600 text-5xl mb-4">✓</div>
+          <h2 className="text-xl font-semibold text-green-800">WhatsApp is Connected</h2>
+          <p className="text-green-700 mt-2">Your CRM is successfully linked to Meta's Official API.</p>
+        </div>
+      ) : (
+        <button
+          onClick={handleConnectWhatsApp}
+          disabled={!isSdkLoaded || isLoading}
+          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-[#25D366] hover:bg-[#128C7E] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#25D366] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+        >
+          {isLoading ? "Connecting..." : "Connect Official WhatsApp"}
+        </button>
+      )}
 
       <div className="mt-8 text-sm text-gray-500 border-t pt-4">
         <p><strong>Note:</strong> Ensure your browser allows popups for this site. You will need to verify your business details with Meta during this process.</p>
