@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// 1. Tell TypeScript about the global Facebook SDK variables
 declare global {
   interface Window {
     fbAsyncInit: () => void;
@@ -15,15 +14,12 @@ export default function WhatsAppIntegrationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   
-  // 2. We use a ref to store these IDs because Meta sends them via window.postMessage 
-  // before the FB.login callback finishes.
   const signupData = useRef<{ waba_id: string | null; phone_number_id: string | null }>({
     waba_id: null,
     phone_number_id: null,
   });
 
   useEffect(() => {
-    // 3. Initialize Facebook SDK
     window.fbAsyncInit = function () {
       window.FB.init({
         appId: process.env.NEXT_PUBLIC_META_APP_ID || "",
@@ -34,7 +30,6 @@ export default function WhatsAppIntegrationPage() {
       setIsSdkLoaded(true);
     };
 
-    // Load the SDK script asynchronously
     (function (d, s, id) {
       let js: any, fjs = d.getElementsByTagName(s)[0];
       if (d.getElementById(id)) return;
@@ -46,29 +41,31 @@ export default function WhatsAppIntegrationPage() {
       }
     })(document, "script", "facebook-jssdk");
 
-    // 4. Listen for the Embedded Signup data injected by Meta's popup
     const sessionInfoListener = (event: MessageEvent) => {
-      // FIX 1: Ensure all Meta domains are allowed
       const allowedOrigins = [
         "https://www.facebook.com",
         "https://web.facebook.com",
         "https://business.facebook.com"
       ];
-      if (!allowedOrigins.includes(event.origin)) {
-        return;
-      }
+      if (!allowedOrigins.includes(event.origin)) return;
 
       try {
-        // FIX 2: Safely parse (Meta sometimes sends an object directly, sometimes a JSON string)
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        const eventName = data?.event;
 
-        if (data?.type === "WA_EMBEDDED_SIGNUP" && data?.event === "FINISH") {
+        // 🛑 FIX 1: Catch all possible Meta FINISH events, not just "FINISH"
+        if (
+          data?.type === "WA_EMBEDDED_SIGNUP" &&
+          (eventName === "FINISH" || 
+           eventName === "FINISH_ONLY_WABA" || 
+           eventName === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING")
+        ) {
           console.log("✅ Received WhatsApp IDs from Meta popup:", data.data);
-          signupData.current.phone_number_id = data.data.phone_number_id;
-          signupData.current.waba_id = data.data.waba_id;
+          signupData.current.phone_number_id = data.data.phone_number_id || null;
+          signupData.current.waba_id = data.data.waba_id || null;
         }
       } catch (err) {
-        // Ignore non-JSON messages (browser extensions often send these)
+        // Ignore non-JSON messages
       }
     };
 
@@ -85,25 +82,22 @@ export default function WhatsAppIntegrationPage() {
     setIsLoading(true);
     setMessage(null);
 
-    // 5. Trigger the Meta Login Popup
     window.FB.login(
       function (response: any) { 
-        
-        // FIX 3: 1000ms buffer to allow the window message to arrive before validating IDs
         setTimeout(() => {
           (async () => {
             if (response.authResponse?.code) {
               const code = response.authResponse.code;
               const { waba_id, phone_number_id } = signupData.current;
 
-              if (!waba_id || !phone_number_id) {
+              // 🛑 FIX 2: Only block if WABA ID is entirely missing
+              if (!waba_id) {
                 setIsLoading(false);
-                setMessage({ type: "error", text: "Setup incomplete. Did you finish the WhatsApp wizard?" });
+                setMessage({ type: "error", text: "Setup incomplete. Meta did not return a WABA ID." });
                 return;
               }
 
               try {
-                // 6. Send the code and IDs to your Node.js backend
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social-auth/connect-meta-whatsapp`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
