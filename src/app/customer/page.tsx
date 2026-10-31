@@ -97,6 +97,7 @@ import { getCustomerFields } from "@/store/masters/customerfields/customerfields
 import EmailCampaignAgentWorkspace from "../component/aiagents/EmailCampaignAgentWorkspace";
 import VideoProjectWorkspace from "../component/aiagents/VideoProjectWorkspace";
 import CallDialog, { CallTarget } from "../component/popups/CallDialog";
+import WhatsAppInboxDialog from "../component/popups/WhatsappInboxDialog";
 
 
 interface DeleteAllDialogDataInterface { }
@@ -167,6 +168,7 @@ export default function Customer() {
   const [isSendPropertiesOpen, setIsSendPropertiesOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSendDirectMessageOpen, setIsSendDirectMessageOpen] = useState(false);
+  const [isWhatsappInboxOpen, setIsWhatsappInboxOpen] = useState(false);
   const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const [isFavouriteDialogOpen, setIsFavouriteDialogOpen] = useState(false);
   const [dialogData, setDialogData] = useState<DeleteDialogDataInterface | null>(null);
@@ -2138,6 +2140,7 @@ export default function Customer() {
         onClose={() => setIsSendDirectMessageOpen(false)}
         customerIds={selectedCustomers}
       />
+      <WhatsAppInboxDialog isOpen={isWhatsappInboxOpen} onClose={() => setIsWhatsappInboxOpen(false)} adminId={admin?.id} />
       <SendPropertiesWhatsAppPopup
         isOpen={isSendPropertiesOpen}
         onClose={() => setIsSendPropertiesOpen(false)}
@@ -4108,11 +4111,13 @@ export default function Customer() {
                     }
                   }}><div className="absolute top-0 left-0 z-0 h-full bg-[var(--color-primary)] w-0 group-hover:w-full transition-all duration-300"></div>
                     <span className="relative">Email All</span></button>
-                  <button type="button" className="relative overflow-hidden py-[2px] group hover:bg-[var(--color-primary-lighter)] hover:text-white text-[var(--color-primary)] bg-[var(--color-primary-lighter)] rounded-tr-sm rounded-br-sm border-l-[3px] px-2 border-l-[var(--color-primary)] cursor-pointer" onClick={() => {
-                    if (selectedCustomers.length <= 0) toast.error("please select atleast 1 customer")
+                  <button type="button" className="relative overflow-hidden py-[2px] group hover:bg-[var(--color-primary-lighter)] hover:text-white text-[var(--color-primary)] bg-[var(--color-primary-lighter)] rounded-tr-sm rounded-br-sm border-l-[3px] px-2 border-l-[var(--color-primary)] cursor-pointer" 
+                  onClick={() => {
+                    setIsWhatsappInboxOpen(true)
+                   /*  if (selectedCustomers.length <= 0) toast.error("please select atleast 1 customer")
                     else {
                       setIsActionMenuOpen(true);
-                    }
+                    } */
                   }}><div className="absolute top-0 left-0 z-0 h-full bg-[var(--color-primary)] w-0 group-hover:w-full transition-all duration-300"></div>
                     <span className="relative">Whatsapp</span></button>
 

@@ -177,7 +177,9 @@ export default function Page() {
     }, [pairingGeneratedAt]);
 
     useEffect(() => {
-        fetch(API_ROUTES.MASTERS.WHATSAPP.WHATSAPP_CONNECTION_STATUS)
+        fetch(API_ROUTES.MASTERS.WHATSAPP.WHATSAPP_CONNECTION_STATUS,{
+    credentials: "include",
+})
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'connected') {
@@ -270,6 +272,7 @@ export default function Page() {
         try {
             await fetch(API_ROUTES.MASTERS.WHATSAPP.WHATSAPP_CONNECTION_LOGOUT, {
                 method: "POST",
+                credentials: "include",
             });
         } catch (error) {
             console.error("Failed to disconnect", error);
@@ -292,6 +295,7 @@ export default function Page() {
         try {
             const res = await fetch(API_ROUTES.MASTERS.WHATSAPP.WHATSAPP_CONNECTION_PAIRING_CODE, {
                 method: "POST",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ phoneNumber: digitsOnly }),
             });

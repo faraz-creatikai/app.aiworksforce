@@ -15,7 +15,8 @@ export interface whatsappGetDataInterface {
 
 export interface whatsappAllCustomerInterface {
     templateId: string,
-    customerIds: string[]
+    customerIds: string[],
+    sendToAll?: boolean;
 }
 export interface whatsappAllContactInterface {
     templateId: string,

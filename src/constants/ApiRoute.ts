@@ -1,4 +1,4 @@
-export const BASE_URL = "https://appapi.aiworksforce.com/api";
+export const BASE_URL = "https://apiorbit.ibigdata.in/api";
 //https://live-project-backend-1.onrender.com
 //https://propertyapi.aileadgenie.cloud/api
 //https://apidomain.ibigdata.in
@@ -677,7 +677,7 @@ export const API_ROUTES = {
   }
 };
 
-export const API_URL = "https://appapi.aiworksforce.com";
+export const API_URL = "https://apiorbit.ibigdata.in";
 
 
 
