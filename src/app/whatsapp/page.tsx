@@ -48,14 +48,21 @@ export default function WhatsAppIntegrationPage() {
 
     // 4. Listen for the Embedded Signup data injected by Meta's popup
     const sessionInfoListener = (event: MessageEvent) => {
-      // Security check: ensure the message is actually from Meta
-      if (event.origin !== "https://www.facebook.com" && event.origin !== "https://web.facebook.com") {
+      // FIX 1: Ensure all Meta domains are allowed
+      const allowedOrigins = [
+        "https://www.facebook.com",
+        "https://web.facebook.com",
+        "https://business.facebook.com"
+      ];
+      if (!allowedOrigins.includes(event.origin)) {
         return;
       }
 
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === "WA_EMBEDDED_SIGNUP" && data.event === "FINISH") {
+        // FIX 2: Safely parse (Meta sometimes sends an object directly, sometimes a JSON string)
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+
+        if (data?.type === "WA_EMBEDDED_SIGNUP" && data?.event === "FINISH") {
           console.log("✅ Received WhatsApp IDs from Meta popup:", data.data);
           signupData.current.phone_number_id = data.data.phone_number_id;
           signupData.current.waba_id = data.data.waba_id;
@@ -69,7 +76,7 @@ export default function WhatsAppIntegrationPage() {
     return () => window.removeEventListener("message", sessionInfoListener);
   }, []);
 
-const handleConnectWhatsApp = () => {
+  const handleConnectWhatsApp = () => {
     if (!window.FB) {
       setMessage({ type: "error", text: "Facebook SDK is not loaded yet." });
       return;
@@ -80,41 +87,44 @@ const handleConnectWhatsApp = () => {
 
     // 5. Trigger the Meta Login Popup
     window.FB.login(
-      function (response: any) { // 👈 FIX: Changed from async to standard function
+      function (response: any) { 
         
-        // Wrap your async logic inside this self-executing function
-        (async () => {
-          if (response.authResponse?.code) {
-            const code = response.authResponse.code;
-            const { waba_id, phone_number_id } = signupData.current;
+        // FIX 3: 1000ms buffer to allow the window message to arrive before validating IDs
+        setTimeout(() => {
+          (async () => {
+            if (response.authResponse?.code) {
+              const code = response.authResponse.code;
+              const { waba_id, phone_number_id } = signupData.current;
 
-            if (!waba_id || !phone_number_id) {
-              setIsLoading(false);
-              setMessage({ type: "error", text: "Setup incomplete. Did you finish the WhatsApp wizard?" });
-              return;
+              if (!waba_id || !phone_number_id) {
+                setIsLoading(false);
+                setMessage({ type: "error", text: "Setup incomplete. Did you finish the WhatsApp wizard?" });
+                return;
+              }
+
+              try {
+                // 6. Send the code and IDs to your Node.js backend
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social-auth/connect-meta-whatsapp`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "include",
+                  body: JSON.stringify({ code, waba_id, phone_number_id }),
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || "Failed to connect to backend.");
+
+                setMessage({ type: "success", text: data.message || "WhatsApp Connected!" });
+              } catch (error: any) {
+                console.error("Backend Error:", error);
+                setMessage({ type: "error", text: error.message || "Failed to connect to backend." });
+              }
+            } else {
+              setMessage({ type: "error", text: "Facebook login was cancelled or failed." });
             }
-
-            try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/social-auth/connect-meta-whatsapp`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ code, waba_id, phone_number_id }),
-              });
-
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.message || "Failed to connect to backend.");
-
-              setMessage({ type: "success", text: data.message || "WhatsApp Connected!" });
-            } catch (error: any) {
-              console.error("Backend Error:", error);
-              setMessage({ type: "error", text: error.message || "Failed to connect to backend." });
-            }
-          } else {
-            setMessage({ type: "error", text: "Facebook login was cancelled or failed." });
-          }
-          setIsLoading(false);
-        })(); // 👈 Execute the async wrapper
+            setIsLoading(false);
+          })(); 
+        }, 1000); 
       },
       {
         config_id: process.env.NEXT_PUBLIC_META_CONFIG_ID,
