@@ -238,7 +238,7 @@ export const getFilteredCustomer = async (params: string) => {
     console.log(" params : ", params, "\n", " Data:", data)
     return data;
   }
-  catch (error) {
+  catch (error) { 
     console.log("SERVER ERROR: ", error)
     return null;
   }
